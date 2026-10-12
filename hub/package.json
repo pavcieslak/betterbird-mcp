@@ -1,6 +1,6 @@
 {
   "name": "betterbird-mcp-hub",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MCP hub bridging MCP clients to a Betterbird extension",
   "scripts": {
     "start": "node server.mjs",
