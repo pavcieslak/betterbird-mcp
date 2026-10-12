@@ -1,0 +1,22 @@
+{
+  "manifest_version": 2,
+  "name": "Betterbird MCP Bridge",
+  "version": "0.1.1",
+  "description": "Łączy Betterbird z lokalnym hubem MCP (odczyt wiadomości i tworzenie szkiców).",
+  "author": "Lucmedia",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "mcp-bridge@lucmedia.pl",
+      "strict_min_version": "128.0"
+    }
+  },
+  "background": { "scripts": ["background.js"] },
+  "permissions": [
+    "accountsRead",
+    "messagesRead",
+    "compose",
+    "compose.save",
+    "storage"
+  ],
+  "options_ui": { "page": "options.html", "open_in_tab": true }
+}

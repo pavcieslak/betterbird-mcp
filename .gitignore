@@ -1,0 +1,10 @@
+node_modules/
+# sekrety i dane lokalne: nigdy do repozytorium
+hub/config.json
+hub/audit.log
+hub/hub.out.log
+*.log
+.env
+# artefakty budowania
+*.xpi
+*.zip
