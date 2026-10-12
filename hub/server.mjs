@@ -25,7 +25,7 @@ function tokenMatches(plain, hashHex) {
 
 function loadConfig() {
   if (!fs.existsSync(CONFIG_PATH)) {
-    console.error(`Brak ${CONFIG_PATH}. Uruchom najpierw: node setup.mjs init`);
+    console.error(`Missing ${CONFIG_PATH}. Run first: node setup.mjs init`);
     process.exit(1);
   }
   return JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"));
@@ -50,10 +50,10 @@ const pending = new Map();
 function callExtension(method, params = {}, timeoutMs = 30000) {
   return new Promise((resolve, reject) => {
     if (!extSocket || extSocket.readyState !== 1) {
-      return reject(new Error("Rozszerzenie Betterbirda nie jest połączone z hubem (uruchom Betterbird i sprawdź token w opcjach rozszerzenia)."));
+      return reject(new Error("The Betterbird extension is not connected to the hub (start Betterbird and check the token in the extension options)."));
     }
     const id = nextId++;
-    const timer = setTimeout(() => { pending.delete(id); reject(new Error(`Timeout: rozszerzenie nie odpowiedziało na ${method}`)); }, timeoutMs);
+    const timer = setTimeout(() => { pending.delete(id); reject(new Error(`Timeout: the extension did not answer ${method}`)); }, timeoutMs);
     pending.set(id, { resolve, reject, timer });
     extSocket.send(JSON.stringify({ id, method, params }));
   });
@@ -81,7 +81,7 @@ function buildServer(client) {
     server.registerTool(name, def, async (args) => {
       log(client.name, "tool_call", { tool: name, args: redact(args) });
       try { return asText(await handler(args)); }
-      catch (e) { log(client.name, "tool_error", { tool: name, error: e.message }); return { isError: true, ...asText(`Błąd: ${e.message}`) }; }
+      catch (e) { log(client.name, "tool_error", { tool: name, error: e.message }); return { isError: true, ...asText(`Error: ${e.message}`) }; }
     });
   };
 
@@ -241,8 +241,8 @@ let listening = 0;
 for (const host of binds) {
   const srv = http.createServer((req, res) => handleHttp(req, res).catch((e) => { log("hub", "http_error", { error: e.message }); if (!res.headersSent) json(res, 500, { error: "internal error" }); }));
   srv.on("upgrade", onUpgrade);
-  srv.on("error", (e) => console.error(`Nie można nasłuchiwać na ${host}:${PORT} - ${e.code || e.message}`));
-  srv.listen(PORT, host, () => { listening++; console.log(`Hub nasłuchuje na http://${host}:${PORT}/mcp`); });
+  srv.on("error", (e) => console.error(`Cannot listen on ${host}:${PORT} - ${e.code || e.message}`));
+  srv.listen(PORT, host, () => { listening++; console.log(`Hub listening on http://${host}:${PORT}/mcp`); });
 }
 // Diagnostics: record why the process ended, and survive a stray error from a single request.
 process.on("uncaughtException", (e) => { log("hub", "uncaught_exception", { error: String((e && e.stack) || e) }); });

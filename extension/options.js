@@ -4,7 +4,7 @@ async function refreshStatus() {
   try {
     const r = await messenger.runtime.sendMessage({ type: "status" });
     $("status").textContent = "Status: " + (r && r.state);
-  } catch { $("status").textContent = "Status: nieznany"; }
+  } catch { $("status").textContent = "Status: unknown"; }
 }
 
 (async () => {

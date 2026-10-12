@@ -175,7 +175,7 @@ const handlers = {
     // the compose window was only needed to save; close it so nothing is left half-open
     try { const t = await messenger.tabs.get(tab.id); await messenger.windows.remove(t.windowId); } catch { /* may already be closed */ }
     const saved = (res.messages || [])[0];
-    return { saved: true, note: "Szkic zapisany w Szkicach. Wysyłanie tylko ręcznie w Betterbirdzie.", message: saved ? brief(saved) : undefined };
+    return { saved: true, note: "Draft saved in the Drafts folder. Sending is manual, in Betterbird.", message: saved ? brief(saved) : undefined };
   },
 };
 

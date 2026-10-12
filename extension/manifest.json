@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Betterbird MCP Bridge",
   "version": "0.1.1",
-  "description": "Łączy Betterbird z lokalnym hubem MCP (odczyt wiadomości i tworzenie szkiców).",
+  "description": "Connects Betterbird to a local MCP hub (read messages, create drafts).",
   "author": "Lucmedia",
   "browser_specific_settings": {
     "gecko": {

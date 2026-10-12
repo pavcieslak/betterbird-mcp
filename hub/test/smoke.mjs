@@ -26,7 +26,7 @@ const readerTok = tokenFrom(setup("add-client", "reader", "read"), /bbmcp_[\w-]+
 const drafterTok = tokenFrom(setup("add-client", "drafter", "read,draft"), /bbmcp_[\w-]+/);
 
 const hub = spawn("node", ["server.mjs"], { cwd: hubDir, env, stdio: "pipe" });
-await new Promise((r) => hub.stdout.on("data", (d) => String(d).includes("nasłuchuje") && r()));
+await new Promise((r) => hub.stdout.on("data", (d) => String(d).includes("listening") && r()));
 const base = `http://127.0.0.1:${PORT}`;
 
 try {
@@ -52,7 +52,7 @@ try {
     const results = {
       list_accounts: [{ id: "account1", name: "Test", identities: [{ id: "id1", email: "me@example.com" }] }],
       search_messages: { count: 1, messages: [{ id: 42, subject: "Hello", author: "a@b.c" }] },
-      get_message: { id: params.messageId, subject: "Hello", body: "Treść wiadomości" },
+      get_message: { id: params.messageId, subject: "Hello", body: "Message body: żółć ✓" },
       create_draft: { saved: true, message: { id: 99, subject: params.subject } },
     };
     ext.send(JSON.stringify(method in results ? { id, result: results[method] } : { id, error: `unknown ${method}` }));
@@ -80,7 +80,7 @@ try {
   assert.equal(JSON.parse(text(await reader.callTool({ name: "list_accounts", arguments: {} })))[0].id, "account1"); ok("round trip: list_accounts");
   const s = JSON.parse(text(await reader.callTool({ name: "search_messages", arguments: { query: "hello", limit: 5 } })));
   assert.equal(s.messages[0].id, 42); assert.equal(calls.at(-1).params.limit, 5); ok("round trip: search_messages with args");
-  assert.equal(JSON.parse(text(await reader.callTool({ name: "get_message", arguments: { messageId: 42 } }))).body, "Treść wiadomości"); ok("round trip: get_message (UTF-8)");
+  assert.equal(JSON.parse(text(await reader.callTool({ name: "get_message", arguments: { messageId: 42 } }))).body, "Message body: żółć ✓"); ok("round trip: get_message (UTF-8)");
   const denied = await reader.callTool({ name: "create_draft", arguments: { body: "x" } }).then((x) => x, (e) => ({ isError: true, e }));
   assert.ok(denied.isError); assert.ok(!calls.some((c) => c.method === "create_draft")); ok("read client cannot call create_draft");
   await reader.close();
@@ -89,7 +89,7 @@ try {
   const drafter = await connect(drafterTok);
   const dTools = (await drafter.listTools()).tools.map((t) => t.name);
   assert.ok(dTools.includes("create_draft") && !dTools.some((n) => /send|delete|move/.test(n))); ok("draft client sees create_draft, no send/delete/move tools");
-  const d = JSON.parse(text(await drafter.callTool({ name: "create_draft", arguments: { to: ["x@y.z"], subject: "Test", body: "Cześć" } })));
+  const d = JSON.parse(text(await drafter.callTool({ name: "create_draft", arguments: { to: ["x@y.z"], subject: "Test", body: "Hi, żółć ✓" } })));
   assert.equal(d.message.id, 99); ok("round trip: create_draft");
   await drafter.close();
 
@@ -97,12 +97,12 @@ try {
   ext.close(); await new Promise((res) => setTimeout(res, 300));
   const reader2 = await connect(readerTok);
   const down = await reader2.callTool({ name: "list_accounts", arguments: {} });
-  assert.ok(down.isError && /nie jest połączone/.test(text(down))); ok("extension offline -> readable tool error");
+  assert.ok(down.isError && /not connected/.test(text(down))); ok("extension offline -> readable tool error");
   await reader2.close();
 
   // --- audit log
   const logTxt = fs.readFileSync(env.BBMCP_LOG, "utf8");
-  assert.ok(logTxt.includes('"client":"drafter"') && logTxt.includes("auth_failed")); assert.ok(!logTxt.includes("Cześć")); ok("audit log written, draft body not logged");
+  assert.ok(logTxt.includes('"client":"drafter"') && logTxt.includes("auth_failed")); assert.ok(!logTxt.includes("Hi, żółć ✓")); ok("audit log written, draft body not logged");
 
   console.log(`\nAll ${passed} checks passed.`);
 } catch (e) {

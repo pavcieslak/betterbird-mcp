@@ -1,6 +1,7 @@
 // Token management. Tokens are shown ONCE; only their SHA-256 is stored in config.json.
 //   node setup.mjs init [tailscale-ip] [allowed-host ...]
 //   node setup.mjs add-client <name> <read,draft,modify>
+//   node setup.mjs rotate-ext
 //   node setup.mjs list
 //   node setup.mjs revoke <name>
 import fs from "node:fs";
@@ -20,7 +21,7 @@ const save = (c) => { fs.writeFileSync(CONFIG_PATH, JSON.stringify(c, null, 2), 
 const [cmd, ...args] = process.argv.slice(2);
 
 if (cmd === "init") {
-  if (fs.existsSync(CONFIG_PATH)) { console.error("config.json już istnieje. Usuń go, jeśli chcesz zacząć od nowa."); process.exit(1); }
+  if (fs.existsSync(CONFIG_PATH)) { console.error("config.json already exists. Delete it if you want to start over."); process.exit(1); }
   const [tsIp, ...hosts] = args;
   const ext = newToken("bbext");
   const config = {
@@ -31,32 +32,32 @@ if (cmd === "init") {
     clients: [],
   };
   save(config);
-  console.log("Utworzono config.json\n");
-  console.log("TOKEN ROZSZERZENIA (wklej w opcjach rozszerzenia w Betterbirdzie, pokazany tylko raz):");
+  console.log("Created config.json\n");
+  console.log("EXTENSION TOKEN (paste it into the extension options in Betterbird; shown only once):");
   console.log(ext, "\n");
-  console.log("Dodaj klientów: node setup.mjs add-client <nazwa> read,draft");
+  console.log("Add clients: node setup.mjs add-client <name> read,draft");
 } else if (cmd === "add-client") {
   const [name, permsArg = "read"] = args;
-  if (!name) { console.error("Podaj nazwę klienta"); process.exit(1); }
+  if (!name) { console.error("Give a client name"); process.exit(1); }
   const permissions = permsArg.split(",").map((s) => s.trim()).filter(Boolean);
   const bad = permissions.filter((p) => !ALLOWED.has(p));
-  if (bad.length) { console.error(`Nieznane uprawnienia: ${bad.join(", ")} (dozwolone: read, draft, modify)`); process.exit(1); }
+  if (bad.length) { console.error(`Unknown permissions: ${bad.join(", ")} (allowed: read, draft, modify)`); process.exit(1); }
   const config = load();
-  if (config.clients.some((c) => c.name === name)) { console.error("Klient o tej nazwie już istnieje (najpierw: revoke)."); process.exit(1); }
+  if (config.clients.some((c) => c.name === name)) { console.error("A client with this name already exists (revoke it first)."); process.exit(1); }
   const token = newToken("bbmcp");
   config.clients.push({ name, permissions, tokenHash: sha(token), created: new Date().toISOString() });
   save(config);
-  console.log(`Klient: ${name}  uprawnienia: ${permissions.join(",")}`);
-  console.log("TOKEN (pokazany tylko raz):");
+  console.log(`Client: ${name}  permissions: ${permissions.join(",")}`);
+  console.log("TOKEN (shown only once):");
   console.log(token);
 } else if (cmd === "rotate-ext") {
   const config = load();
   const ext = newToken("bbext");
   config.extTokenHash = sha(ext);
   save(config);
-  console.log("Nowy TOKEN ROZSZERZENIA (pokazany tylko raz, zaczyna się od bbext_):");
+  console.log("New EXTENSION TOKEN (shown only once, starts with bbext_):");
   console.log(ext);
-  console.log("Wklej go w opcjach rozszerzenia w Betterbirdzie i kliknij 'Zapisz i połącz'. Tokeny klientów (Rakazo itd.) nie zmieniają się.");
+  console.log("Paste it into the extension options in Betterbird and click 'Save and connect'. Client tokens (Rakazo etc.) are unchanged.");
 } else if (cmd === "list") {
   const c = load();
   console.log(`bind: ${c.bind.join(", ")}  port: ${c.port}`);
@@ -66,7 +67,7 @@ if (cmd === "init") {
   const before = c.clients.length;
   c.clients = c.clients.filter((x) => x.name !== args[0]);
   save(c);
-  console.log(before === c.clients.length ? "Nie znaleziono klienta." : `Usunięto: ${args[0]}`);
+  console.log(before === c.clients.length ? "Client not found." : `Revoked: ${args[0]}`);
 } else {
-  console.log("Użycie: node setup.mjs init [tailscale-ip] [host...] | add-client <nazwa> <uprawnienia> | rotate-ext | list | revoke <nazwa>");
+  console.log("Usage: node setup.mjs init [tailscale-ip] [host...] | add-client <name> <permissions> | rotate-ext | list | revoke <name>");
 }
